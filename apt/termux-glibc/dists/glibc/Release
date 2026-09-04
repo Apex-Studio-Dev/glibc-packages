@@ -1,0 +1,27 @@
+Origin: ApexStudio
+Label: ApexStudio
+Suite: glibc
+Codename: glibc
+Date: Fri, 04 Sep 2026 10:09:42 UTC
+Architectures: aarch64 all
+Components: main
+Description: ApexStudio apt repository
+
+MD5Sum:
+ 4a4dd3598707603b3f76a2378a4504aa               20 Contents-aarch64.gz
+ d41d8cd98f00b204e9800998ecf8427e                0 main/binary-aarch64/Packages
+ f4b0c44ceff952469945aa5e29d9e2b5               29 main/binary-aarch64/Packages.gz
+ d41d8cd98f00b204e9800998ecf8427e                0 main/binary-all/Packages
+ f4b0c44ceff952469945aa5e29d9e2b5               29 main/binary-all/Packages.gz
+SHA1:
+ a0fddd5458378c1bf3c10dd2f5c060d1347741ed               20 Contents-aarch64.gz
+ da39a3ee5e6b4b0d3255bfef95601890afd80709                0 main/binary-aarch64/Packages
+ b435b8bbe6aa07e9eb8b7cd5cee5251d15927b88               29 main/binary-aarch64/Packages.gz
+ da39a3ee5e6b4b0d3255bfef95601890afd80709                0 main/binary-all/Packages
+ b435b8bbe6aa07e9eb8b7cd5cee5251d15927b88               29 main/binary-all/Packages.gz
+SHA256:
+ f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec               20 Contents-aarch64.gz
+ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855                0 main/binary-aarch64/Packages
+ db622500f630fab36dd746392667f60b8e6c9f44d1e789d3d44b8120219e9058               29 main/binary-aarch64/Packages.gz
+ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855                0 main/binary-all/Packages
+ db622500f630fab36dd746392667f60b8e6c9f44d1e789d3d44b8120219e9058               29 main/binary-all/Packages.gz
