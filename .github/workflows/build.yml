@@ -277,7 +277,7 @@ jobs:
         path: ./
     - name: Extract *.deb archives
       run: |
-        for archive in artifacts/debs-{aarch64,arm,i686,x86_64}-${{ github.sha }}.tar; do
+        for archive in debs-*/debs-{aarch64,arm,i686,x86_64}-${{ github.sha }}.tar; do
           tar xf "$archive"
         done
     - name: Import GPG signing key
