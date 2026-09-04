@@ -335,4 +335,7 @@ jobs:
         git add -A
         git -c user.name='ApexStudio CI' -c user.email='ci@apexstudio.dev' \
           commit -q -m "Update apt repository [skip ci]"
-        git push -q origin gh-pages
+        git push -q \
+          "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+          HEAD:gh-pages
+        echo "Published apt repository to gh-pages branch"
