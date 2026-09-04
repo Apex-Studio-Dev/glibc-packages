@@ -269,41 +269,52 @@ jobs:
     steps:
     - name: Clone repository
       uses: actions/checkout@v7
-      with:
-        ref: gh-pages
+    - name: Get files from termux-packages repository
+      run: ./get-build-package.sh
     - name: Get *.deb files
       uses: actions/download-artifact@v8.0.1
       with:
         path: ./
-    - name: Get files from termux-packages repository
-      run: ./get-build-package.sh
+    - name: Extract *.deb archives
+      run: |
+        for archive in artifacts/debs-{aarch64,arm,i686,x86_64}-${{ github.sha }}.tar; do
+          tar xf "$archive"
+        done
     - name: Import GPG signing key
       env:
         GPG_PRIVATE_KEY: ${{ secrets.APEX_GPG_PRIVATE_KEY }}
+        GNUPGHOME: ${{ runner.temp }}/gnupg
       run: |
-        GNUPGHOME="$(pwd)/.gnupg"
-        export GNUPGHOME
-        mkdir -p "$GNUPGHOME"
-        chmod 700 "$GNUPGHOME"
-        if [ -n "$GPG_PRIVATE_KEY" ]; then
-          printf '%s' "$GPG_PRIVATE_KEY" > /tmp/private.asc
-          gpg --batch --import /tmp/private.asc
-          rm -f /tmp/private.asc
-        else
+        if [ -z "$GPG_PRIVATE_KEY" ]; then
           echo "::error::Missing APEX_GPG_PRIVATE_KEY secret; repository will be unsigned"
+          exit 0
         fi
-    - name: Publish to GitHub Pages
+        mkdir -p "$GNUPGHOME" && chmod 700 "$GNUPGHOME"
+        export GNUPGHOME
+        printf '%s' "$GPG_PRIVATE_KEY" > /tmp/private.asc
+        gpg --batch --yes --import /tmp/private.asc
+        rm -f /tmp/private.asc
+    - name: Get current gh-pages tree
+      run: |
+        git fetch --depth 1 origin gh-pages || true
+        if git rev-parse --verify FETCH_HEAD >/dev/null 2>&1; then
+          git worktree add -q gh-pages FETCH_HEAD
+        else
+          git worktree add -q --orphan gh-pages gh-pages
+          git -C gh-pages rm -rfq . 2>/dev/null || true
+        fi
+    - name: Publish apt repository
       env:
         GNUPGHOME: ${{ runner.temp }}/gnupg
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         mkdir -p "$GNUPGHOME" && chmod 700 "$GNUPGHOME"
-
-        GPG_KEY=""
-        if gpg --list-secret-keys --keyid-format long 2>/dev/null | grep -q '^sec'; then
-          GPG_KEY=$(gpg --list-secret-keys --keyid-format long 2>/dev/null | awk '/^sec/{fpr=$0; while(!/^[[:space:]]*[A-F0-9]{40}/ && getline>0){fpr=fpr $0} match(fpr, /[A-F0-9]{40}/); print substr(fpr, RSTART, RLENGTH)}' | head -1)
+        export GNUPGHOME
+        if gpg --batch --list-secret-keys >/dev/null 2>&1; then
+          GPG_KEY=$(gpg --batch --with-colons --list-secret-keys | awk -F: '/^fpr/{print $10; exit}')
+        else
+          GPG_KEY=""
         fi
-
         bash scripts/publish-gh-pages.sh \
           --pages gh-pages \
           --debs "$PWD/debs" \
@@ -311,9 +322,17 @@ jobs:
           --public-key "$PWD/apexstudio-packages.asc" \
           --repo-root "$PWD" \
           --github-repo "${GITHUB_REPOSITORY}"
-    - name: Push to GitHub Pages
+    - name: Push to gh-pages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git add -f dists/ pool/ apexstudio-packages.asc 2>/dev/null || true
-        git diff --cached --quiet && echo "No changes to commit" && exit 0
-        git commit -m "Update apt repo $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-        git push origin gh-pages
+        cd gh-pages
+        rm -rf .merge-*
+        if git diff --quiet && git diff --cached --quiet; then
+          echo "No repository changes; skipping push"
+          exit 0
+        fi
+        git add -A
+        git -c user.name='ApexStudio CI' -c user.email='ci@apexstudio.dev' \
+          commit -q -m "Update apt repository [skip ci]"
+        git push -q origin gh-pages
