@@ -1,0 +1,45 @@
+Package: glibc32
+Version: 2.44
+Architecture: aarch64
+Section: 
+Priority: 
+Maintainer: @termux-pacman
+Depends: glibc, glibc (= 2.44)
+Description: GNU C Library (32-bit)
+Filename: pool/main/aarch64/glibc32_2.44_aarch64.deb
+Size: 3244988
+MD5sum: 54bafc90980ff4e291496f8609c5544a
+SHA1: 1442cec3f99be1762fe36cd0a90a1c8f0f168b98
+SHA256: a5090d43cb1adadb7d9c8cc6060776db98f9ded420fa6731f0c2cfcab4f5a4ec
+SHA512: 6777e97015514810479ee5250fb984c97f787a81cc61640da90449efd97f8907cada568c32980bee83906e848f1d326e80db4279e2b1e71874908e57304fa25d
+
+Package: glibc
+Version: 2.44
+Architecture: aarch64
+Section: 
+Priority: 
+Maintainer: @termux-pacman
+Depends: linux-api-headers-glibc
+Description: GNU C Library
+Filename: pool/main/aarch64/glibc_2.44_aarch64.deb
+Size: 9814168
+MD5sum: fecc8be5e49fdba2173d09f0f7e4486f
+SHA1: 61c6710f356ee8edd63afc3c775e998ea267da25
+SHA256: 5e11094335172d24b2fcbed145b96cf4870757fb6e883c339665fcb190790716
+SHA512: a898104693687399380c7c0709538d85882a77d2cf75db2f48ef587f5aa84f21bf2ae69672155be3c4440d4a08f603823c78b724c005e09275c2aa63aa6a05fc
+
+Package: linux-api-headers-glibc
+Version: 7.1
+Architecture: aarch64
+Section: 
+Priority: 
+Maintainer: @termux-pacman
+Depends: 
+Description: Kernel headers sanitized for use in userspace
+Filename: pool/main/aarch64/linux-api-headers-glibc_7.1_aarch64.deb
+Size: 1276652
+MD5sum: b7f79d062401b137e8cfe71d99cbe961
+SHA1: d96dafbd6f5c3169422699380c45617f59c6d7ee
+SHA256: 288153f852cafe29980f7f4683a82fb12a6979794c301c5e2d399996c9dc0970
+SHA512: 3d2206be03be66a25cfacef9847f4a33b913586e1490b8f23e04674bf7f99930cd674aaaa3a2299b3b56d62509f9d6d1a961d8c7335c18d453d24fb12610d1de
+

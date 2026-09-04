@@ -1,0 +1,30 @@
+Package: glibc
+Version: 2.44
+Architecture: i686
+Section: 
+Priority: 
+Maintainer: @termux-pacman
+Depends: linux-api-headers-glibc
+Description: GNU C Library
+Filename: pool/main/i686/glibc_2.44_i686.deb
+Size: 10218652
+MD5sum: 3572e075c5d418ff86a9a69ba396809a
+SHA1: ef93ae438a5fbfa63654cca8bc49ae707c7191cc
+SHA256: 146377f85d5fd667d8c08e781420985cb127d8b669e364817c23fd4e55f410a7
+SHA512: 0154be8449a649bbb9ecfddbc4a85fa0ac94be8a8f2f22bf0aeaa2d7dab690a5252a2d896200d4d660112361eca75f3fbc4486abcf4f502a057033124d38e622
+
+Package: linux-api-headers-glibc
+Version: 7.1
+Architecture: i686
+Section: 
+Priority: 
+Maintainer: @termux-pacman
+Depends: 
+Description: Kernel headers sanitized for use in userspace
+Filename: pool/main/i686/linux-api-headers-glibc_7.1_i686.deb
+Size: 1294688
+MD5sum: 575cc989abff5840bbf475881c043e62
+SHA1: e6452dafb52cf5209816a62a415fe37b63e255da
+SHA256: 598a2c44b1a6d87445275838d0d3c17976354b55313e66893d23b552fe91b799
+SHA512: 9a0b72a4fddc5a92c7f065ed02fee864c053a19b582695511eeffda1b0e82e4e35876ea01966e8ce85542ef238001e2d86d3998181838b6bc8606d762bbc1d4b
+

@@ -1,0 +1,30 @@
+Package: glibc
+Version: 2.44
+Architecture: arm
+Section: 
+Priority: 
+Maintainer: @termux-pacman
+Depends: linux-api-headers-glibc
+Description: GNU C Library
+Filename: pool/main/arm/glibc_2.44_arm.deb
+Size: 9523656
+MD5sum: f7ba7d6b69a3e018883de7c8a94639ac
+SHA1: fafb2207457f70f392ff29affcc9850a35fb4190
+SHA256: e9e430f15e453bb7e077bd5dfa1336d35c644542d0c1d213def4e568e3ca650f
+SHA512: a17f8cf2975d88fbc9a233812e995d600e6496e8f84f575401c2ad439e5daa8daec3de277f08db90b8e7f38eb65f2f5f824ef8c54985df5b1a7e215bdb6e488e
+
+Package: linux-api-headers-glibc
+Version: 7.1
+Architecture: arm
+Section: 
+Priority: 
+Maintainer: @termux-pacman
+Depends: 
+Description: Kernel headers sanitized for use in userspace
+Filename: pool/main/arm/linux-api-headers-glibc_7.1_arm.deb
+Size: 1255024
+MD5sum: df418be54ae9bc6ca449fcb454656a52
+SHA1: 30c83e82734be036160c89fa1721b93ff8938b26
+SHA256: 0a6145aa34a67e793391d468e599d400cacb5eb5136b02aae152b78c218e500a
+SHA512: 7300d851eba82a7a83e9b57a0c053a1e8c93a7bcfbf23743c8fadada9b11bf6786b9c3218f8fd74e582daec2a7c60d60bd003871fe5339cfe51e46912eeeef9b
+
