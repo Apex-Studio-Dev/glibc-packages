@@ -13,6 +13,11 @@ on:
   schedule:
     - cron:  '0,30 0-23 * * *'
 
+# NOTE: schedule triggers only run on the default branch of the repository.
+# No explicit fork guard needed — schedule is disabled on forks by default
+# unless the fork is set as default. If auto-sync is unwanted, remove the
+# schedule trigger above.
+
 jobs:
   check-repo:
     runs-on: ubuntu-latest
