@@ -18,6 +18,12 @@ termux_step_make() {
 }
 
 termux_step_make_install() {
-	make -C "${TERMUX_PKG_SRCDIR}" INSTALL_HDR_PATH="${TERMUX__PREFIX__INCLUDE_DIR}" ARCH="${LINUX_ARCH}" headers_install
+	(
+		if [ "$TERMUX_ON_DEVICE_BUILD" = "false" ]; then
+			unset CFLAGS CXXFLAGS CC CXX AR RANLIB NM CXXFILT
+			export PATH="/usr/bin"
+		fi
+		make -C "${TERMUX_PKG_SRCDIR}" INSTALL_HDR_PATH="${TERMUX__PREFIX__INCLUDE_DIR}" ARCH="${LINUX_ARCH}" headers_install
+	)
 	rm -r "${TERMUX__PREFIX__INCLUDE_DIR}/drm"
 }
