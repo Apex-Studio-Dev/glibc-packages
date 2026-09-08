@@ -91,7 +91,7 @@ jobs:
             docker build -t ghcr.io/termux/package-builder-cgct:latest .
           fi
 
-          for repo_path in $(jq --raw-output 'del(.pkg_format) | keys | .[]' repo.json); do
+          for repo_path in $(jq --raw-output 'del(.pkg_format) | keys | map(select(. == "gpkg")) | .[]' repo.json); do
             repo=$(jq --raw-output '.["'${repo_path}'"].name' repo.json)
             while read -r file; do
               if ! [[ $file == ${repo_path}/* ]]; then
@@ -121,7 +121,7 @@ jobs:
           MANUAL_INPUT_PACKAGES="${{ github.event.inputs.packages }}"
           read -a PACKAGES <<< "${MANUAL_INPUT_PACKAGES//$'\n'/ }"
           for pkg in "${PACKAGES[@]}"; do
-            repo_paths=$(jq --raw-output 'del(.pkg_format) | keys | .[]' repo.json)
+            repo_paths=$(jq --raw-output 'del(.pkg_format) | keys | map(select(. == "gpkg")) | .[]' repo.json)
             found=false
             for repo_path in $repo_paths; do
               repo=$(jq --raw-output '.["'${repo_path}'"].name' repo.json)
@@ -140,7 +140,7 @@ jobs:
           done
         fi
 
-        for repo in $(jq --raw-output 'del(.pkg_format) | .[].name' repo.json); do
+        for repo in $(jq --raw-output 'del(.pkg_format) | .[] | select(.name == "termux-glibc") | .name' repo.json); do
           if [ -f ./built_${repo}_packages.txt ]; then
             sort ./built_${repo}_packages.txt | uniq > ./built_${repo}_packages.txt.tmp
             mv ./built_${repo}_packages.txt.tmp ./built_${repo}_packages.txt
@@ -158,7 +158,7 @@ jobs:
     - name: Lint packages
       run: |
         declare -a package_recipes
-        for repo_path in $(jq --raw-output 'del(.pkg_format) | keys | .[]' repo.json); do
+        for repo_path in $(jq --raw-output 'del(.pkg_format) | keys | map(select(. == "gpkg")) | .[]' repo.json); do
           repo=$(jq --raw-output '.["'${repo_path}'"].name' repo.json)
           if [ -f ./built_${repo}_packages.txt ]; then
             package_recipes="$package_recipes $(cat ./built_${repo}_packages.txt | repo_path=${repo_path} awk '{print ENVIRON["repo_path"]"/"$1"/build.sh"}')"
@@ -172,7 +172,7 @@ jobs:
     - name: Build packages
       run: |
         declare -a packages
-        for repo_path in $(jq --raw-output 'del(.pkg_format) | keys | .[]' repo.json); do
+        for repo_path in $(jq --raw-output 'del(.pkg_format) | keys | map(select(. == "gpkg")) | .[]' repo.json); do
           repo=$(jq --raw-output '.["'${repo_path}'"].name' repo.json)
 
           if [ -f ./built_${repo}_packages.txt ]; then
@@ -216,7 +216,7 @@ jobs:
       run: |
         test -d termux-packages/output && mv termux-packages/output/* ./output/
 
-        for repo in $(jq --raw-output 'del(.pkg_format) | .[].name' repo.json); do
+        for repo in $(jq --raw-output 'del(.pkg_format) | .[] | select(.name == "termux-glibc") | .name' repo.json); do
           test -f ./built_${repo}_packages.txt && mv ./built_${repo}_packages.txt ./debs/
           test -f ./built_${repo}_subpackages.txt && cat ./built_${repo}_subpackages.txt >> ./debs/built_${repo}_packages.txt \
             && rm ./built_${repo}_subpackages.txt
@@ -238,7 +238,7 @@ jobs:
             mv "$deb" debs/
             pkg="$(basename "$deb")"
             pkg="${pkg%%_*}"
-            for repo in $(jq --raw-output 'del(.pkg_format) | .[].name' repo.json); do
+            for repo in $(jq --raw-output 'del(.pkg_format) | .[] | select(.name == "termux-glibc") | .name' repo.json); do
               if [ -f "./debs/built_${repo}_packages.txt" ]; then
                 echo "$pkg" >> "./debs/built_${repo}_packages.txt"
               fi
@@ -303,6 +303,21 @@ jobs:
           git worktree add -q --orphan gh-pages gh-pages
           git -C gh-pages rm -rfq . 2>/dev/null || true
         fi
+    - name: Scope repo to gpkg and clean up stale apt trees
+      run: |
+        # Publish only the glibc (gpkg) apt repo. repo.json lists extra
+        # bionic download repos (termux-main/x11/root) purely for dependency
+        # resolution during builds; the publish step must NOT regenerate or
+        # extend apt trees for them on the glibc gh-pages branch.
+        mkdir -p .repo-scope
+        jq '{pkg_format, gpkg}' repo.json > .repo-scope/repo.json
+        # Remove apt trees for bionic repos that a previous publish (running
+        # against the full repo.json) may have created or extended on gh-pages.
+        for tree in termux-main termux-x11 termux-root; do
+          rm -rf "gh-pages/apt/${tree}"
+        done
+        # Prune stray dist/pool artifacts that do not belong to the glibc repo.
+        bash scripts/cleanup-stale-apt.sh --pages gh-pages --repo-root "$PWD/.repo-scope"
     - name: Publish apt repository
       env:
         GNUPGHOME: ${{ runner.temp }}/gnupg
@@ -320,7 +335,7 @@ jobs:
           --debs "$PWD/debs" \
           --gpg-key "$GPG_KEY" \
           --public-key "$PWD/apexstudio-packages.asc" \
-          --repo-root "$PWD" \
+          --repo-root "$PWD/.repo-scope" \
           --github-repo "${GITHUB_REPOSITORY}"
     - name: Push to gh-pages
       env:
