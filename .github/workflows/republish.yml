@@ -1,0 +1,131 @@
+name: Republish apt repo
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup-stale:
+        description: "Remove non-glibc apt trees and stale component dirs / legacy files before republishing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  republish:
+    if: github.repository == 'Apex-Studio-Dev/glibc-packages'
+    runs-on: ubuntu-26.04
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v7
+
+    - name: Get files from termux-packages repository
+      run: |
+        ./get-build-package.sh
+
+    - name: Install apt-ftparchive
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y apt-utils
+
+    - name: Install rclone
+      run: |
+        if ! command -v rclone >/dev/null 2>&1; then
+          curl -sSLo /tmp/rclone.zip https://github.com/rclone/rclone/releases/download/v1.75.1/rclone-v1.75.1-linux-amd64.zip
+          sudo unzip -o /tmp/rclone.zip -d /usr/local/lib/rclone
+          sudo ln -s /usr/local/lib/rclone/rclone-v1.75.1-linux-amd64/rclone /usr/local/bin/rclone
+        fi
+        rclone version
+
+    - name: Import GPG signing key
+      env:
+        GPG_PRIVATE_KEY: ${{ secrets.APEX_GPG_PRIVATE_KEY }}
+        GNUPGHOME: ${{ runner.temp }}/gnupg
+      run: |
+        if [ -z "$GPG_PRIVATE_KEY" ]; then
+          echo "::error::Missing APEX_GPG_PRIVATE_KEY secret; repository will be unsigned"
+          exit 0
+        fi
+        mkdir -p "$GNUPGHOME" && chmod 700 "$GNUPGHOME"
+        export GNUPGHOME
+        printf '%s' "$GPG_PRIVATE_KEY" > /tmp/private.asc
+        gpg --batch --yes --import /tmp/private.asc
+        rm -f /tmp/private.asc
+
+    - name: Get current gh-pages tree
+      run: |
+        git fetch --depth 1 origin gh-pages || true
+        if git rev-parse --verify FETCH_HEAD >/dev/null 2>&1; then
+          git worktree add -q gh-pages FETCH_HEAD
+        else
+          git worktree add -q --orphan gh-pages gh-pages
+          git -C gh-pages rm -rfq . 2>/dev/null || true
+        fi
+
+    - name: Clean stale apt artifacts
+      if: ${{ inputs.cleanup-stale == true }}
+      run: |
+        mkdir -p .repo-scope
+        jq '{pkg_format, gpkg}' repo.json > .repo-scope/repo.json
+        for tree in termux-main termux-x11 termux-root; do
+          rm -rf "gh-pages/apt/${tree}"
+        done
+        bash scripts/cleanup-stale-apt.sh \
+          --pages "$PWD/gh-pages" \
+          --repo-root "$PWD/.repo-scope"
+
+    - name: Republish apt repository (no package build)
+      env:
+        GNUPGHOME: ${{ runner.temp }}/gnupg
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+        R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+        R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+      run: |
+        mkdir -p "$GNUPGHOME" && chmod 700 "$GNUPGHOME"
+        export GNUPGHOME
+        if gpg --batch --list-secret-keys >/dev/null 2>&1; then
+          GPG_KEY=$(gpg --batch --with-colons --list-secret-keys | awk -F: '/^fpr/{print $10; exit}')
+        else
+          GPG_KEY=""
+        fi
+        mkdir -p debs && touch debs/.placeholder
+        bash scripts/publish-gh-pages.sh \
+          --pages gh-pages \
+          --debs "$PWD/debs" \
+          --gpg-key "$GPG_KEY" \
+          --public-key "$PWD/apexstudio-packages.asc" \
+          --repo-root "$PWD/.repo-scope" \
+          --github-repo "${GITHUB_REPOSITORY}"
+
+    - name: Copy website files
+      run: |
+        if [ -d site ]; then
+          for f in site/*; do
+            [ -f "$f" ] && cp -f "$f" gh-pages/
+          done
+        fi
+
+    - name: Push to gh-pages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cd gh-pages
+        rm -rf .merge-*
+        if git diff --quiet && git diff --cached --quiet; then
+          echo "No repository changes; skipping push"
+          exit 0
+        fi
+        git add -A
+        git -c user.name='ApexStudio CI' -c user.email='ci@apexstudio.dev' \
+          commit -q -m "Republish apt repository [skip ci]"
+        git push -q \
+          "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+          HEAD:gh-pages
+        echo "Published apt repository to gh-pages branch"
